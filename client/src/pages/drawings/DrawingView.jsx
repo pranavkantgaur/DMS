@@ -29,8 +29,7 @@ export default function DrawingView() {
     setLoading(true)
     try {
       const res = await api.get(`/drawings/${id}`)
-      const data = res.data
-      setDrawing(Array.isArray(data) ? data[0] : data)
+      setDrawing(res.data.data)
     } catch (err) {
       toast.error('Failed to load drawing')
       navigate('/drawings')

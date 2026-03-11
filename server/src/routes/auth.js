@@ -99,7 +99,7 @@ router.post('/register', async (req, res) => {
       [username, email]
     );
     if (existing.length) {
-      return res.status(409).json({ error: 'User could not be created' });
+      return res.status(409).json({ error: 'Username or email already exists' });
     }
 
     const password_hash = await bcrypt.hash(password, 12);

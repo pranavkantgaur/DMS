@@ -26,7 +26,7 @@ export default function DrawingEdit() {
   const loadDrawing = async () => {
     try {
       const res = await api.get(`/drawings/${id}`)
-      const d = res.data
+      const d = res.data.data
       setForm({
         title: d.title || '',
         drawing_number: d.drawing_number || '',
