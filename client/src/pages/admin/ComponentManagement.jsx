@@ -16,11 +16,12 @@ function Modal({ title, onClose, children }) {
   )
 }
 
-const emptyForm = { name: '', plant_id: '', description: '' }
+const emptyForm = { name: '', plant_id: '', department_id: '', description: '' }
 
 export default function ComponentManagement() {
   const [components, setComponents] = useState([])
   const [plants, setPlants] = useState([])
+  const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [plantFilter, setPlantFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -38,9 +39,14 @@ export default function ComponentManagement() {
 
   const loadPlants = async () => {
     try {
-      const res = await api.get('/plants')
-      const data = res.data
-      setPlants(Array.isArray(data) ? data : data.data || [])
+      const [plantsRes, deptsRes] = await Promise.all([
+        api.get('/plants'),
+        api.get('/departments'),
+      ])
+      const plantsData = plantsRes.data
+      const deptsData = deptsRes.data
+      setPlants(Array.isArray(plantsData) ? plantsData : plantsData.data || [])
+      setDepartments(Array.isArray(deptsData) ? deptsData : deptsData.data || [])
     } catch {
       toast.error('Failed to load plants')
     }
@@ -71,6 +77,7 @@ export default function ComponentManagement() {
     setForm({
       name: comp.name || '',
       plant_id: comp.plant_id || '',
+      department_id: comp.department_id || '',
       description: comp.description || '',
     })
     setModalOpen(true)
@@ -202,6 +209,13 @@ export default function ComponentManagement() {
                 <select name="plant_id" className="form-control" value={form.plant_id} onChange={handleChange}>
                   <option value="">None</option>
                   {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Department</label>
+                <select name="department_id" className="form-control" value={form.department_id} onChange={handleChange}>
+                  <option value="">None</option>
+                  {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div className="form-group">

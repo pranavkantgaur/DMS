@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api, { downloadDrawing } from '../../services/api'
@@ -14,21 +14,40 @@ export default function DrawingView() {
   const { isAdmin, isSupervisor } = useAuth()
   const [drawing, setDrawing] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [pdfUrl, setPdfUrl] = useState(null)
+  const pdfBlobUrl = useRef(null)
 
   useEffect(() => {
     loadDrawing()
+    loadPdf()
+    return () => {
+      if (pdfBlobUrl.current) window.URL.revokeObjectURL(pdfBlobUrl.current)
+    }
   }, [id])
 
   const loadDrawing = async () => {
     setLoading(true)
     try {
       const res = await api.get(`/drawings/${id}`)
-      setDrawing(res.data)
+      const data = res.data
+      setDrawing(Array.isArray(data) ? data[0] : data)
     } catch (err) {
       toast.error('Failed to load drawing')
       navigate('/drawings')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadPdf = async () => {
+    try {
+      const res = await api.get(`/drawings/${id}/download`, { responseType: 'blob' })
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      pdfBlobUrl.current = url
+      setPdfUrl(url)
+    } catch {
+      // PDF preview not available; user can still download
     }
   }
 
@@ -41,11 +60,7 @@ export default function DrawingView() {
     }
   }
 
-  const getFileUrl = () => {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-    const token = localStorage.getItem('dms_token')
-    return `${baseURL}/drawings/${id}/file${token ? `?token=${token}` : ''}`
-  }
+  const getFileUrl = () => pdfUrl
 
   if (loading) {
     return (
@@ -126,11 +141,15 @@ export default function DrawingView() {
           <h2 style={{ margin: 0, fontSize: '1rem' }}>PDF Preview</h2>
         </div>
         <div className="card-body" style={{ padding: 0 }}>
-          <iframe
-            src={getFileUrl()}
-            className="pdf-viewer"
-            title={drawing.title}
-          />
+          {pdfUrl ? (
+            <iframe
+              src={pdfUrl}
+              className="pdf-viewer"
+              title={drawing.title}
+            />
+          ) : (
+            <div className="empty-state">PDF preview unavailable. Use the Download button above.</div>
+          )}
         </div>
       </div>
     </div>
