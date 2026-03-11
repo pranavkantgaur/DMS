@@ -2,6 +2,47 @@
 
 A full-stack web application for managing engineering drawings across power plant departments and components.
 
+## Screenshots
+
+### Login Page
+![Login Page](docs/screenshots/01_login.png)
+
+### Admin Dashboard
+![Admin Dashboard](docs/screenshots/02_admin_dashboard.png)
+
+### Drawings List
+![Drawings List](docs/screenshots/03_drawings_list.png)
+
+### Drawings Filtered by Plant
+![Drawings Filtered](docs/screenshots/11_drawings_filtered.png)
+
+### Upload Drawing
+![Upload Drawing](docs/screenshots/04_upload_drawing.png)
+
+### Drawing Detail View
+![Drawing Detail View](docs/screenshots/05_drawing_view.png)
+
+### Edit Drawing
+![Edit Drawing](docs/screenshots/06_edit_drawing.png)
+
+### User Management (Admin)
+![User Management](docs/screenshots/07_user_management.png)
+
+### Department Management (Admin)
+![Department Management](docs/screenshots/08_departments.png)
+
+### Plant Management (Admin)
+![Plant Management](docs/screenshots/09_plants.png)
+
+### Component Management (Admin / Supervisor)
+![Component Management](docs/screenshots/10_components.png)
+
+### Supervisor Dashboard
+![Supervisor Dashboard](docs/screenshots/12_supervisor_dashboard.png)
+
+### Operator Dashboard
+![Operator Dashboard](docs/screenshots/13_operator_dashboard.png)
+
 ## Features
 
 - **Role-based access control**: Admin, Supervisor, and Plant Operator interfaces
