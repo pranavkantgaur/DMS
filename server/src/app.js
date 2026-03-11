@@ -9,6 +9,7 @@ if (!process.env.JWT_SECRET) {
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -19,18 +20,38 @@ const drawingRoutes = require('./routes/drawings');
 
 const app = express();
 
+// ── Rate limiters ────────────────────────────────────────────────────────────
+// Strict limit for authentication endpoints to deter brute-force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+// General API limit for all other routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ── Routes ──────────────────────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/departments', departmentRoutes);
-app.use('/api/plants', plantRoutes);
-app.use('/api/components', componentRoutes);
-app.use('/api/drawings', drawingRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/users', apiLimiter, userRoutes);
+app.use('/api/departments', apiLimiter, departmentRoutes);
+app.use('/api/plants', apiLimiter, plantRoutes);
+app.use('/api/components', apiLimiter, componentRoutes);
+app.use('/api/drawings', apiLimiter, drawingRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
