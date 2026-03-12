@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import api, { downloadDrawing } from '../../services/api'
+import api, { downloadDrawing, convertToAutocad } from '../../services/api'
 import toast from 'react-hot-toast'
 
 function StatusBadge({ status }) {
@@ -15,6 +15,7 @@ export default function DrawingView() {
   const [drawing, setDrawing] = useState(null)
   const [loading, setLoading] = useState(true)
   const [pdfUrl, setPdfUrl] = useState(null)
+  const [converting, setConverting] = useState(false)
   const pdfBlobUrl = useRef(null)
 
   useEffect(() => {
@@ -59,6 +60,21 @@ export default function DrawingView() {
     }
   }
 
+  const handleConvertToAutocad = async () => {
+    setConverting(true)
+    const toastId = toast.loading('Converting to AutoCAD… this may take up to 2 minutes')
+    try {
+      const baseName = drawing.drawing_number || drawing.title || `drawing_${id}`
+      await convertToAutocad(id, baseName)
+      toast.success('AutoCAD DXF file downloaded!', { id: toastId })
+    } catch (err) {
+      const detail = err.response?.data?.detail || err.response?.data?.error || err.message
+      toast.error(`Conversion failed: ${detail}`, { id: toastId })
+    } finally {
+      setConverting(false)
+    }
+  }
+
   const getFileUrl = () => pdfUrl
 
   if (loading) {
@@ -79,6 +95,16 @@ export default function DrawingView() {
         <h1 className="page-title">{drawing.title}</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-primary" onClick={handleDownload}>⬇ Download</button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleConvertToAutocad}
+            disabled={converting}
+            title="Convert this PDF drawing to an AutoCAD DXF file via on-premise VLM"
+          >
+            {converting
+              ? <><span className="loading-spinner" style={{ width: 14, height: 14, marginRight: 6, verticalAlign: 'middle' }} />Converting…</>
+              : '⚙ Convert to AutoCAD'}
+          </button>
           {(isAdmin || isSupervisor) && (
             <Link to={`/drawings/${id}/edit`} className="btn btn-secondary">✏ Edit</Link>
           )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import api, { downloadDrawing } from '../../services/api'
+import api, { downloadDrawing, convertToAutocad } from '../../services/api'
 import toast from 'react-hot-toast'
 
 function StatusBadge({ status }) {
@@ -16,6 +16,7 @@ export default function DrawingList() {
   const [departments, setDepartments] = useState([])
   const [components, setComponents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [converting, setConverting] = useState(null) // drawing id currently converting
   const [filters, setFilters] = useState({
     plant_id: '', department_id: '', component_id: '', status: '', search: '',
   })
@@ -93,6 +94,21 @@ export default function DrawingList() {
       toast.success('Download started')
     } catch {
       toast.error('Failed to download drawing')
+    }
+  }
+
+  const handleConvert = async (drawing) => {
+    setConverting(drawing.id)
+    const toastId = toast.loading(`Converting "${drawing.title}" to AutoCAD…`)
+    try {
+      const baseName = drawing.drawing_number || drawing.title || `drawing_${drawing.id}`
+      await convertToAutocad(drawing.id, baseName)
+      toast.success('AutoCAD DXF file downloaded!', { id: toastId })
+    } catch (err) {
+      const detail = err.response?.data?.detail || err.response?.data?.error || err.message
+      toast.error(`Conversion failed: ${detail}`, { id: toastId })
+    } finally {
+      setConverting(null)
     }
   }
 
@@ -201,26 +217,36 @@ export default function DrawingList() {
                       <td><StatusBadge status={d.status} /></td>
                       <td>{d.uploaded_by_name || d.uploaded_by?.username || '—'}</td>
                       <td>{d.created_at ? new Date(d.created_at).toLocaleDateString() : '—'}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          <Link to={`/drawings/${d.id}`} className="btn btn-secondary btn-sm btn-icon" title="View">👁</Link>
-                          <button
-                            className="btn btn-secondary btn-sm btn-icon"
-                            title="Download"
-                            onClick={() => handleDownload(d)}
-                          >⬇</button>
-                          {(isAdmin || isSupervisor) && (
-                            <>
-                              <Link to={`/drawings/${d.id}/edit`} className="btn btn-secondary btn-sm btn-icon" title="Edit">✏</Link>
-                              <button
-                                className="btn btn-danger btn-sm btn-icon"
-                                title="Delete"
-                                onClick={() => handleDelete(d.id)}
-                              >🗑</button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            <Link to={`/drawings/${d.id}`} className="btn btn-secondary btn-sm btn-icon" title="View">👁</Link>
+                            <button
+                              className="btn btn-secondary btn-sm btn-icon"
+                              title="Download PDF"
+                              onClick={() => handleDownload(d)}
+                            >⬇</button>
+                            <button
+                              className="btn btn-secondary btn-sm btn-icon"
+                              title="Convert to AutoCAD DXF"
+                              onClick={() => handleConvert(d)}
+                              disabled={converting === d.id}
+                            >
+                              {converting === d.id
+                                ? <span className="loading-spinner" style={{ width: 12, height: 12 }} />
+                                : '⚙'}
+                            </button>
+                            {(isAdmin || isSupervisor) && (
+                              <>
+                                <Link to={`/drawings/${d.id}/edit`} className="btn btn-secondary btn-sm btn-icon" title="Edit">✏</Link>
+                                <button
+                                  className="btn btn-danger btn-sm btn-icon"
+                                  title="Delete"
+                                  onClick={() => handleDelete(d.id)}
+                                >🗑</button>
+                              </>
+                            )}
+                          </div>
+                        </td>
                     </tr>
                   ))}
                 </tbody>

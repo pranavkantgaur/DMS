@@ -36,4 +36,19 @@ export const downloadDrawing = async (id, filename) => {
   window.URL.revokeObjectURL(url)
 }
 
+export const convertToAutocad = async (id, baseFilename) => {
+  const response = await api.post(`/drawings/${id}/convert`, {}, { responseType: 'blob' })
+  const contentDisposition = response.headers['content-disposition'] || ''
+  const match = contentDisposition.match(/filename="?([^"]+)"?/)
+  const filename = match ? match[1] : `${baseFilename || `drawing_${id}`}.dxf`
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/dxf' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export default api

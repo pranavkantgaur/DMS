@@ -17,6 +17,7 @@ const departmentRoutes = require('./routes/departments');
 const plantRoutes = require('./routes/plants');
 const componentRoutes = require('./routes/components');
 const drawingRoutes = require('./routes/drawings');
+const convertRoutes = require('./routes/convert');
 
 const app = express();
 
@@ -39,6 +40,15 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later' },
 });
 
+// Strict limit for VLM conversion — each call is expensive
+const convertLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Conversion rate limit reached. Please wait before converting more drawings.' },
+});
+
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors());
@@ -52,6 +62,7 @@ app.use('/api/departments', apiLimiter, departmentRoutes);
 app.use('/api/plants', apiLimiter, plantRoutes);
 app.use('/api/components', apiLimiter, componentRoutes);
 app.use('/api/drawings', apiLimiter, drawingRoutes);
+app.use('/api/drawings', convertLimiter, convertRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
